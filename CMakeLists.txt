@@ -1,65 +1,48 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.5)
 project(dynamic_reconfigure)
 
-find_package(catkin REQUIRED COMPONENTS message_generation roscpp std_msgs)
-find_package(Boost REQUIRED)
-
-include_directories(include)
-include_directories(SYSTEM ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
-
-catkin_python_setup()
-
-add_message_files(
-  DIRECTORY msg
-  FILES
-  BoolParameter.msg      Config.msg           Group.msg       IntParameter.msg      SensorLevels.msg
-  ConfigDescription.msg  DoubleParameter.msg  GroupState.msg  ParamDescription.msg  StrParameter.msg)
-
-add_service_files(
-  DIRECTORY srv
-  FILES Reconfigure.srv)
-
-generate_messages(DEPENDENCIES std_msgs)
-
-if(CATKIN_ENABLE_TESTING)
-  find_package(rostest REQUIRED)
-  set(dynamic_reconfigure_BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-  include(${dynamic_reconfigure_SOURCE_DIR}/cmake/dynamic_reconfigure-macros.cmake)
-  generate_dynamic_reconfigure_options(cfg/Test.cfg)
-  add_subdirectory(test)
+# Default to C99
+if(NOT CMAKE_C_STANDARD)
+  set(CMAKE_C_STANDARD 99)
 endif()
 
-catkin_package(LIBRARIES dynamic_reconfigure_config_init_mutex
-               INCLUDE_DIRS include
-               CATKIN_DEPENDS message_runtime std_msgs
-               CFG_EXTRAS dynamic_reconfigure-extras.cmake
+# Default to C++14
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 14)
+endif()
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+# find dependencies
+find_package(ament_cmake REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+
+# IDL definitions
+set(msg_files
+  # "msg/Message.msg"
+  "msg/BoolParameter.msg"
+  "msg/ConfigDescription.msg"
+  "msg/Config.msg"
+  "msg/DoubleParameter.msg"
+  "msg/Group.msg"
+  "msg/GroupState.msg"
+  "msg/IntParameter.msg"
+  "msg/ParamDescription.msg"
+  "msg/SensorLevels.msg"
+  "msg/StrParameter.msg"
 )
-
-add_library(dynamic_reconfigure_config_init_mutex
-  src/dynamic_reconfigure_config_init_mutex.cpp)
-target_link_libraries(dynamic_reconfigure_config_init_mutex ${Boost_LIBRARIES})
-
-install(DIRECTORY include/dynamic_reconfigure/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-  FILES_MATCHING PATTERN "*.h")
-
-install(TARGETS dynamic_reconfigure_config_init_mutex
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION})
-
-install(DIRECTORY cmake
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-  USE_SOURCE_PERMISSIONS
+set(srv_files
+  # "srv/Service.srv"
+  "srv/Reconfigure.srv"
 )
-install(DIRECTORY msg
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
-install(DIRECTORY srv
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
-install(DIRECTORY templates
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
-
-catkin_install_python(PROGRAMS
-  scripts/dynparam
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+rosidl_generate_interfaces(${PROJECT_NAME}
+  ${msg_files}
+  ${srv_files}
+  DEPENDENCIES std_msgs
 )
+ament_export_dependencies(rosidl_default_runtime)
+
+ament_package()
